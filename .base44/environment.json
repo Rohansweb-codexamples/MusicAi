@@ -1,0 +1,22 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "GOOGLE_CLOUD_PROJECT_ID",
+      "description": "Google Cloud project ID with the Vertex AI API enabled (Google Lyria 3 Pro music generation).",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON",
+      "description": "Service-account JSON key with roles/aiplatform.user, pasted as a single line, for Lyria music generation.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "LLM_API_KEY",
+      "description": "Optional OpenAI-compatible API key that enables the AI lyrics writer.",
+      "requiredAtBoot": false
+    }
+  ]
+}
