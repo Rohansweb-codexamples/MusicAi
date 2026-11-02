@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #07050c;
+  background-image:
+    radial-gradient(1200px 640px at 6% -10%, rgba(168, 85, 247, 0.2), transparent 62%),
+    radial-gradient(900px 520px at 98% -6%, rgba(255, 122, 24, 0.15), transparent 58%),
+    radial-gradient(900px 700px at 50% 110%, rgba(255, 209, 102, 0.06), transparent 60%);
+  background-attachment: fixed;
+  color: #f1ecff;
+}
+
+::selection {
+  background: rgba(255, 122, 24, 0.35);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2142 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2142;
+  border-radius: 999px;
+  border: 2px solid #07050c;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-white/[0.07] bg-ink-850/70 backdrop-blur-sm;
+  }
+
+  .panel-hover {
+    @apply transition-all duration-300 hover:border-white/15 hover:shadow-[0_24px_60px_-32px_rgba(168,85,247,0.6)];
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-ember-500 via-ember-500 to-gold-400 px-4 py-2.5 text-sm font-semibold text-ink-950 shadow-ember transition-all duration-200 hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-plum {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl bg-plum-600 px-4 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-plum-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-mist transition-all duration-200 hover:border-white/25 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-200 transition-all duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-white/10 bg-ink-900/70 px-3.5 py-2.5 text-sm text-mist outline-none transition placeholder:text-mist-dim focus:border-plum-500/70 focus:ring-2 focus:ring-plum-500/20;
+  }
+
+  .label {
+    @apply mb-2 block text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-dim;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-ember-400;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-ember-400 via-gold-400 to-plum-400 bg-clip-text text-transparent;
+  }
+
+  .link-quiet {
+    @apply text-sm text-mist-muted transition hover:text-mist;
+  }
+}

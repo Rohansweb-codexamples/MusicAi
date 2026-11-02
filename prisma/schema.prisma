@@ -1,0 +1,108 @@
+// Music AI — data model
+// One Postgres database holds accounts, sessions, generated tracks and
+// provider usage records. Audio bytes live in object/file storage and are
+// referenced by `Generation.audioKey`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum GenerationMode {
+  TEXT_TO_MUSIC
+  SONG_WITH_VOCALS
+  INSTRUMENTAL
+}
+
+enum GenerationStatus {
+  QUEUED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  passwordHash  String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  sessions      Session[]
+  generations   Generation[]
+  providerCalls ProviderCall[]
+
+  @@index([createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Generation {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  mode          GenerationMode
+  prompt        String
+  lyrics        String?
+  genre         String
+  mood          String
+  tempo         Int?
+  duration      Int
+  status        GenerationStatus @default(QUEUED)
+  progress      Int              @default(0)
+  stage         String?
+  error         String?
+  isSaved       Boolean          @default(true)
+  provider      String?
+  providerModel String?
+  providerJobId String?
+  audioKey      String?
+  audioMime     String?
+  audioBytes    Int?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  providerCalls ProviderCall[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ProviderCall {
+  id           String      @id @default(cuid())
+  provider     String
+  model        String?
+  operation    String      @default("GENERATE")
+  status       String
+  latencyMs    Int?
+  error        String?
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  generationId String?
+  generation   Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+
+  @@index([createdAt])
+}

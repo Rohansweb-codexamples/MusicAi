@@ -1,0 +1,144 @@
+# Base44 sandbox stack — runs the app from the cloned source with live reload.
+#
+#   web      Next.js dev server (host port 3000, the preview entry point)
+#   worker   background generation processor (polls Postgres for queued jobs)
+#   migrate  one-shot: install deps, apply Prisma migrations, seed admin
+#   db       Postgres 16
+#
+# Provider keys are NOT defined here: they arrive through /run/base44/app.env,
+# which is listed last so dashboard values always win.
+
+name: musicai
+
+x-node: &node
+  image: node:22-bookworm-slim
+  working_dir: /app
+  volumes:
+    - ./:/app
+    - node_modules:/app/node_modules
+
+x-db-url: &db-url
+  DATABASE_URL: postgresql://musicai:musicai_dev_password@db:5432/musicai?schema=public
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: on-failure
+    environment:
+      POSTGRES_USER: musicai
+      POSTGRES_PASSWORD: musicai_dev_password
+      POSTGRES_DB: musicai
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musicai -d musicai"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  migrate:
+    <<: *node
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./.env.base44-defaults
+      - path: /run/base44/app.env
+        required: false
+    environment:
+      <<: *db-url
+      NODE_ENV: development
+      STORAGE_DIR: /app/storage
+    command:
+      - sh
+      - -ec
+      - |
+        npm install --no-audit --no-fund
+        npx prisma migrate deploy
+        node prisma/seed.mjs
+
+  web:
+    <<: *node
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    labels:
+      base44.project: Music AI
+      base44.kind: web
+      base44.port: "3000"
+    env_file:
+      - ./.env.base44-defaults
+      - path: /run/base44/app.env
+        required: false
+    environment:
+      <<: *db-url
+      NODE_ENV: development
+      STORAGE_DIR: /app/storage
+      BASE44_PREVIEW_MODE:
+      BASE44_PUBLIC_HOST_SUFFIX:
+      BASE44_SANDBOX_HOST_DOMAIN:
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+      - storage:/app/storage
+    command: ["sh", "-ec", "exec npm run dev"]
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/auth/me').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  worker:
+    <<: *node
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    labels:
+      base44.project: Music AI Worker
+      base44.kind: worker
+    env_file:
+      - ./.env.base44-defaults
+      - path: /run/base44/app.env
+        required: false
+    environment:
+      <<: *db-url
+      NODE_ENV: development
+      STORAGE_DIR: /app/storage
+      WORKER_HEARTBEAT_FILE: /tmp/musicai-worker-heartbeat
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+      - storage:/app/storage
+    command: ["sh", "-ec", "exec npm run worker"]
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const s=require('fs').statSync('/tmp/musicai-worker-heartbeat');process.exit(Date.now()-s.mtimeMs<45000?0:1)"
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+volumes:
+  db_data:
+  node_modules:
+  storage:
